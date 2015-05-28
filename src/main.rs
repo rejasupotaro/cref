@@ -4,6 +4,9 @@
 extern crate rustc_serialize;
 extern crate docopt;
 
+mod db_accessor;
+mod commit;
+
 use std::io::{self, Write};
 
 const VERSION: &'static str = "0.0.1";
@@ -32,6 +35,10 @@ fn main() {
 
 fn run(args: Args) -> Result<(), String> {
     println!("{:?}", args);
+
+    if !args.arg_word.is_empty() {
+        db_accessor::access();
+    }
 
     if args.flag_version {
         println!("{}", VERSION);
