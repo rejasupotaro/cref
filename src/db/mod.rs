@@ -13,7 +13,7 @@ use self::sqlite3::{
 };
 use self::sqlite3::access;
 
-use commit::Commit;
+use model::commit::Commit;
 
 pub fn access() {
     let ok = |flags, dbfile| Some(access::ByFilename { flags: flags, filename: dbfile });

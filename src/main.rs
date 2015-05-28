@@ -4,8 +4,8 @@
 extern crate rustc_serialize;
 extern crate docopt;
 
-mod db_accessor;
-mod commit;
+mod db;
+mod model;
 
 use std::io::{self, Write};
 
@@ -37,7 +37,7 @@ fn run(args: Args) -> Result<(), String> {
     println!("{:?}", args);
 
     if !args.arg_word.is_empty() {
-        db_accessor::access();
+        db::access();
     }
 
     if args.flag_version {
