@@ -1,16 +1,11 @@
 use rustc_serialize::json;
 use rustc_serialize::json::Json;
 use rustc_serialize::json::ToJson;
+use model::commit::Commit;
 
 #[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct CommitEntity {
-    url: String,
-}
-
-impl CommitEntity {
-    pub fn from_str(json_str: String) -> Vec<CommitEntity> {
-        json::decode(&json_str).unwrap()
-    }
+    pub commit: Commit,
 }
 
 impl ToJson for CommitEntity {

@@ -41,25 +41,25 @@ pub fn access() {
 fn insert_commit(conn: &mut DatabaseConnection) -> SqliteResult<Vec<Commit>> {
     try!(conn.exec("DROP TABLE IF EXISTS commits"));
     try!(conn.exec("CREATE TABLE commits (
-                        id    SERIAL PRIMARY KEY,
-                        name  VARCHAR NOT NULL
+                        id    INTEGER PRIMARY KEY AUTOINCREMENT,
+                        url  VARCHAR NOT NULL
                     )"));
 
     {
-        let mut tx = try!(conn.prepare("INSERT INTO commits (id, name)
+        let mut tx = try!(conn.prepare("INSERT INTO commits (url)
                            VALUES (0, 'Dan')"));
         let changes = try!(tx.update(&[]));
         assert_eq!(changes, 1);
     }
 
-    let mut stmt = try!(conn.prepare("SELECT id, name FROM commits"));
+    let mut stmt = try!(conn.prepare("SELECT id, url FROM commits"));
 
     let mut ppl = vec!();
     try!(stmt.query(
         &[], &mut |row| {
             ppl.push(Commit {
-                id: row.get(0),
-                name: row.get(1)
+                url: row.get(1),
+                message: row.get(2),
             });
             Ok(())
         }));

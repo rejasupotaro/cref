@@ -46,7 +46,7 @@ fn run(args: Args) -> Result<(), String> {
     println!("{:?}", args);
 
     if args.cmd_import {
-        github::fetch_commits(args.arg_repo);
+        let commits = github::fetch_commits(args.arg_repo);
     }
 
     if !args.arg_word.is_empty() {
