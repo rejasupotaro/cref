@@ -1,6 +1,8 @@
 #![feature(plugin)]
 #![plugin(docopt_macros)]
+#[macro_use]
 
+extern crate log;
 extern crate rustc_serialize;
 extern crate docopt;
 extern crate hyper;

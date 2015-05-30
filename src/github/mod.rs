@@ -22,12 +22,11 @@ pub fn fetch_commits(repo: String) {
 
     match res {
         Ok(mut r) => {
-            // println!("Ok: {:?}", r);
+            trace!("Response: {:?}", r);
 
             let mut body = String::new();
             r.read_to_string(&mut body).unwrap();
 
-            // println!("Response: {:?}", body);
             let entities: Vec<CommitEntity> = json::decode(&body).unwrap();
             println!("Response: {:?}", entities);
         },
