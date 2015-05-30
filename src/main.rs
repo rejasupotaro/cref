@@ -6,7 +6,7 @@ extern crate docopt;
 extern crate hyper;
 
 mod db;
-mod http;
+mod github;
 mod model;
 
 use std::io::{self, Write};
@@ -44,7 +44,7 @@ fn run(args: Args) -> Result<(), String> {
     println!("{:?}", args);
 
     if args.cmd_import {
-        http::access(args.arg_repo);
+        github::fetch_commits(args.arg_repo);
     }
 
     if !args.arg_word.is_empty() {
