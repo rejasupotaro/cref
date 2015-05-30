@@ -29,7 +29,7 @@ fn lose(why: &str) {
 fn insert_query(commits: Vec<Commit>) -> Vec<String> {
     let mut queries = vec!();
     for commit in commits {
-        let query = format!("INSERT INTO commits (url, message) VALUES ('{}', '{}')",
+        let query = format!("INSERT OR REPLACE INTO commits (url, message) VALUES ('{}', '{}')",
             commit.url,
             commit.message.replace("\n", " ").replace("'", "")); // TODO: impl exact escape later
             trace!("{}", query);
@@ -39,10 +39,9 @@ fn insert_query(commits: Vec<Commit>) -> Vec<String> {
 }
 
 fn create_table(conn: &mut DatabaseConnection) -> SqliteResult<()> {
-    try!(conn.exec("DROP TABLE IF EXISTS commits"));
-    try!(conn.exec("CREATE TABLE commits (
+    try!(conn.exec("CREATE TABLE IF NOT EXISTS commits (
                         id    INTEGER PRIMARY KEY AUTOINCREMENT,
-                        url  VARCHAR NOT NULL,
+                        url  VARCHAR NOT NULL UNIQUE,
                         message VARCHAR
                     )"));
     Ok(())
