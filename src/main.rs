@@ -47,6 +47,7 @@ fn run(args: Args) -> Result<(), String> {
 
     if args.cmd_import {
         let commits = github::fetch_commits(args.arg_repo);
+        db::insert_commits(commits);
     }
 
     if !args.arg_word.is_empty() {

@@ -4,23 +4,23 @@ mod commit_entity;
 
 use std::io::Read;
 use hyper::Client;
-use hyper::header::Connection;
 use hyper::header::UserAgent;
 use rustc_serialize::json;
-use rustc_serialize::json::Json;
-use rustc_serialize::json::ToJson;
 use self::commit_entity::CommitEntity;
 use model::commit::Commit;
 
 pub fn fetch_commits(repo: String) -> Vec<Commit> {
+    let url = format!("https://api.github.com/repos/{}/commits", repo);
+    trace!("url: {:?}", url);
+
     let mut client = Client::new();
-    let mut res = client.get("https://api.github.com/repos/rejasupotaro/kvs-schema/commits")
+    let mut res = client.get(&url)
         .header(UserAgent("cmsg".to_owned()))
         .send();
 
     match res {
         Ok(mut r) => {
-            trace!("Response: {:?}", r);
+            trace!("response: {:?}", r);
 
             let mut body = String::new();
             r.read_to_string(&mut body).unwrap();

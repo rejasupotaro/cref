@@ -15,6 +15,10 @@ use self::sqlite3::access;
 
 use model::commit::Commit;
 
+pub fn insert_commits(commits: Vec<Commit>) {
+
+}
+
 pub fn access() {
     let ok = |flags, dbfile| Some(access::ByFilename { flags: flags, filename: dbfile });
 
