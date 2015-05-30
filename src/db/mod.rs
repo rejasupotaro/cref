@@ -74,34 +74,30 @@ pub fn insert_commits(commits: Vec<Commit>) {
 
 fn try_select<A: Access>(access: A) -> SqliteResult<Vec<Commit>> {
     let mut conn = try!(DatabaseConnection::new(access));
-    create_table(&mut conn);
-
-    {
-        let mut tx = try!(conn.prepare("INSERT INTO commits (url, message)
-                           VALUES ('url', 'message')"));
-        let changes = try!(tx.update(&[]));
-        assert_eq!(changes, 1);
-    }
-
     let mut stmt = try!(conn.prepare("SELECT id, url, message FROM commits"));
 
-    let mut ppl = vec!();
+    let mut commits = vec!();
     try!(stmt.query(
         &[], &mut |row| {
-            ppl.push(Commit {
+            commits.push(Commit {
                 url: row.get(1),
                 message: row.get(2),
             });
             Ok(())
         }));
-    Ok(ppl)
+    Ok(commits)
 }
 
-pub fn select_commits() {
+pub fn select_commits(word: String) {
     let dbfile = "test.db";
     match open(Default::default(), dbfile) {
         Some(access) => match try_select(access) {
-            Ok(x) => println!("Ok: {:?}", x),
+            Ok(commits) => {
+                commits.iter()
+                    .filter(|commit| commit.message.contains(&word))
+                    .inspect(|commit| println!("{}", commit.message))
+                    .collect::<Vec<&Commit>>();
+            },
             Err(oops) => lose(format!("oops!: {:?}", oops).as_ref())
         },
         None => lose("usage")

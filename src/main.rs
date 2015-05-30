@@ -43,7 +43,7 @@ fn main() {
 }
 
 fn run(args: Args) -> Result<(), String> {
-    println!("{:?}", args);
+    trace!("{:?}", args);
 
     if args.cmd_import {
         let commits = github::fetch_commits(args.arg_repo);
@@ -51,7 +51,7 @@ fn run(args: Args) -> Result<(), String> {
     }
 
     if !args.arg_word.is_empty() {
-        db::select_commits();
+        db::select_commits(args.arg_word);
     }
 
     if args.flag_version {
