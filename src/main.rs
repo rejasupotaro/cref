@@ -51,7 +51,7 @@ fn run(args: Args) -> Result<(), String> {
     }
 
     if !args.arg_word.is_empty() {
-        db::access();
+        db::select_commits();
     }
 
     if args.flag_version {
