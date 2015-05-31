@@ -11,7 +11,7 @@ use model::commit::Commit;
 
 pub fn fetch_commits(repo: String) -> Vec<Commit> {
     let url = format!("https://api.github.com/repos/{}/commits", repo);
-    trace!("url: {:?}", url);
+    println!("fetching... {:?}", url);
 
     let mut client = Client::new();
     let mut res = client.get(&url)

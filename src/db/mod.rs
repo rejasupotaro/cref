@@ -1,7 +1,6 @@
 extern crate sqlite3;
 
 use std::default::Default;
-use std::io::{self, Write};
 
 use self::sqlite3::{
     Access,
@@ -17,88 +16,80 @@ use self::sqlite3::access::flags::OpenFlags;
 
 use model::commit::Commit;
 
-fn open(flags: OpenFlags, dbfile: &str) -> Option<ByFilename> {
-    Some(access::ByFilename { flags: flags, filename: dbfile })
+pub struct Db {
+    conn: DatabaseConnection,
 }
 
-fn lose(why: &str) {
-    write!(&mut io::stderr(), "{}", why).unwrap();
-    ::std::process::exit(1)
-}
-
-fn insert_query(commits: Vec<Commit>) -> Vec<String> {
-    let mut queries = vec!();
-    for commit in commits {
-        let query = format!("INSERT OR REPLACE INTO commits (url, message) VALUES ('{}', '{}')",
-            commit.url,
-            commit.message.replace("\n", " ").replace("'", "")); // TODO: impl exact escape later
-            trace!("{}", query);
-        queries.push(query);
+impl Db {
+    pub fn new(dbfile: &str) -> SqliteResult<Db> {
+        let conn = try!(Db::open(Default::default(), dbfile));
+        Ok(Db { conn: conn })
     }
-    queries
-}
 
-fn create_table(conn: &mut DatabaseConnection) -> SqliteResult<()> {
-    try!(conn.exec("CREATE TABLE IF NOT EXISTS commits (
-                        id    INTEGER PRIMARY KEY AUTOINCREMENT,
-                        url  VARCHAR NOT NULL UNIQUE,
-                        message VARCHAR
-                    )"));
-    Ok(())
-}
-
-fn try_insert<A: Access>(access: A, commits: Vec<Commit>) -> SqliteResult<()> {
-    let mut conn = try!(DatabaseConnection::new(access));
-    create_table(&mut conn);
-
-    let queries = insert_query(commits);
-    for query in queries {
-        let mut tx = try!(conn.prepare(query.as_ref()));
-        let changes = try!(tx.update(&[]));
-        assert_eq!(changes, 1);
+    fn open(flags: OpenFlags, dbfile: &str) -> SqliteResult<DatabaseConnection> {
+        let access = access::ByFilename { flags: flags, filename: dbfile };
+        DatabaseConnection::new(access)
     }
-    Ok(())
-}
 
-pub fn insert_commits(commits: Vec<Commit>) {
-    let dbfile = "test.db";
-    match open(Default::default(), dbfile) {
-        Some(access) => match try_insert(access, commits) {
-            Ok(x) => println!("Ok: {:?}", x),
-            Err(oops) => lose(format!("oops!: {:?}", oops).as_ref())
-        },
-        None => lose("usage")
+    fn create_table(&mut self) -> SqliteResult<()> {
+        try!(self.conn.exec(create_table_query()));
+        Ok(())
+    }
+
+    pub fn insert_commits(&mut self, commits: Vec<Commit>) -> SqliteResult<()> {
+        self.create_table();
+
+        let queries = insert_queries(commits);
+        for query in queries {
+            let mut tx = try!(self.conn.prepare(query.as_ref()));
+            let changes = try!(tx.update(&[]));
+            assert_eq!(changes, 1);
+        }
+        Ok(())
+    }
+
+    fn filter_commits(&self, commits: Vec<Commit>, word: String) -> Vec<Commit> {
+        let mut result = vec!();
+        for commit in commits {
+            if commit.message.contains(&word) {
+                result.push(commit);
+            }
+        }
+        result
+    }
+
+    pub fn fetch_commits(&self, word: String) -> SqliteResult<Vec<Commit>> {
+        let mut statement = try!(self.conn.prepare(select_query()));
+        let mut commits = vec!();
+        try!(statement.query(
+            &[], &mut |row| {
+                commits.push(Commit {
+                    url: row.get(1),
+                    message: row.get(2),
+                });
+                Ok(())
+            }));
+
+        Ok(self.filter_commits(commits, word))
     }
 }
 
-fn try_select<A: Access>(access: A) -> SqliteResult<Vec<Commit>> {
-    let mut conn = try!(DatabaseConnection::new(access));
-    let mut stmt = try!(conn.prepare("SELECT id, url, message FROM commits"));
-
-    let mut commits = vec!();
-    try!(stmt.query(
-        &[], &mut |row| {
-            commits.push(Commit {
-                url: row.get(1),
-                message: row.get(2),
-            });
-            Ok(())
-        }));
-    Ok(commits)
+fn create_table_query() -> &'static str {
+    "CREATE TABLE IF NOT EXISTS commits (
+        id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        url     VARCHAR NOT NULL UNIQUE,
+        message VARCHAR
+        )"
 }
 
-pub fn select_commits(word: String) {
-    let dbfile = "test.db";
-    match open(Default::default(), dbfile) {
-        Some(access) => match try_select(access) {
-            Ok(commits) => {
-                commits.iter()
-                    .filter(|commit| commit.message.contains(&word))
-                    .inspect(|commit| println!("{}", commit.message))
-                    .collect::<Vec<&Commit>>();
-            },
-            Err(oops) => lose(format!("oops!: {:?}", oops).as_ref())
-        },
-        None => lose("usage")
-    }
+fn insert_queries(commits: Vec<Commit>) -> Vec<String> {
+    commits.iter().map(|commit| {
+            format!("INSERT OR REPLACE INTO commits (url, message) VALUES ('{}', '{}')",
+                commit.url,
+                commit.message.replace("\n", " ").replace("'", "")) // TODO: impl exact escape later
+        }).collect::<Vec<String>>()
+}
+
+fn select_query() -> &'static str {
+    "SELECT id, url, message FROM commits"
 }
