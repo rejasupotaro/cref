@@ -54,7 +54,8 @@ fn run(args: Args) -> SqliteResult<()> {
 
     if args.cmd_import {
         let mut db = try!(db::Db::new("test.db"));
-        let commits = github::fetch_commits(args.arg_repo);
+        let mut github = github::GitHub::new();
+        let commits = github.fetch_commits(args.arg_repo);
         db.insert_commits(commits);
     }
 
