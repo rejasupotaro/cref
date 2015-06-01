@@ -1,5 +1,5 @@
 [root]
-name = "cmsg"
+name = "cref"
 version = "0.1.0"
 dependencies = [
  "docopt 0.6.64 (registry+https://github.com/rust-lang/crates.io-index)",

@@ -1,10 +1,10 @@
 [package]
-name = "cmsg"
+name = "cref"
 version = "0.1.0"
 authors = ["Kentaro Takiguchi <takiguchi0817@gmail.com>"]
 
 [[bin]]
-name = "cmsg"
+name = "cref"
 
 [dependencies]
 rustc-serialize = "*"

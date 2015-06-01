@@ -23,8 +23,8 @@ impl GitHub {
         let url = format!("https://api.github.com/repos/{}/commits", repo);
         println!("fetching... {:?}", url);
 
-        let mut res = self.client.get(&url)
-            .header(UserAgent("cmsg".to_owned()))
+        let res = self.client.get(&url)
+            .header(UserAgent("cref".to_owned()))
             .send();
 
         match res {

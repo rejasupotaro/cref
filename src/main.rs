@@ -19,9 +19,9 @@ const VERSION: &'static str = "0.0.1";
 
 docopt!(Args derive Debug, "
 Usage:
-  cmsg import <repo>
-  cmsg <word>
-  cmsg (-help | --version)
+  cref import <repo>
+  cref <word>
+  cref (-help | --version)
 
 Options:
   -h, --help     Show this screen
