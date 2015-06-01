@@ -39,7 +39,7 @@ impl Db {
         try!(self.create_tables());
 
         try!(self.conn.exec(insert_repository_query(&repository_name).as_ref()));
-        let mut statement = try!(self.conn.prepare(select_repositories_query(repository_name).as_ref()));
+        let mut statement = try!(self.conn.prepare(select_repositories_by_name_query(repository_name).as_ref()));
         let mut repositories = vec!();
         try!(statement.query(
             &[], &mut |row| {
@@ -60,6 +60,20 @@ impl Db {
         println!("insert {} commits", &commits.len());
 
         Ok(())
+    }
+
+    pub fn select_repositories(&self) -> SqliteResult<Vec<Repository>> {
+        let mut statement = try!(self.conn.prepare(select_repositories_query().as_ref()));
+        let mut repositories = vec!();
+        try!(statement.query(
+            &[], &mut |row| {
+                repositories.push(Repository {
+                    id: row.get(0),
+                    name: row.get(1)
+                });
+                Ok(())
+            }));
+        Ok(repositories)
     }
 
     pub fn select_commits(&self) -> SqliteResult<Vec<Commit>> {
@@ -106,8 +120,12 @@ fn insert_commit_queries(repository_id: i32, commits: &Vec<Commit>) -> Vec<Strin
         }).collect::<Vec<String>>()
 }
 
-fn select_repositories_query(repository_name: &String) -> String {
+fn select_repositories_by_name_query(repository_name: &String) -> String {
     format!("SELECT * FROM repositories WHERE name='{}'", repository_name)
+}
+
+fn select_repositories_query() -> String {
+    format!("SELECT * FROM repositories")
 }
 
 fn select_commits_query() -> &'static str {

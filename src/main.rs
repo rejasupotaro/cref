@@ -15,6 +15,7 @@ mod view;
 
 use std::io::{self, Write};
 use sqlite3::SqliteResult;
+use model::repository::Repository;
 
 const VERSION: &'static str = "0.0.1";
 
@@ -22,6 +23,7 @@ docopt!(Args derive Debug, "
 Usage:
   cref
   cref import <repo>
+  cref list
   cref (-help | --version)
 
 Options:
@@ -62,6 +64,12 @@ fn run(args: Args) -> SqliteResult<()> {
             Ok(()) => {},
             Err(e) => abort(format!("oops!: {:?}", e).as_ref())
         }
+    } else if args.cmd_list {
+        let mut db = try!(db::Db::new("test.db"));
+        let repositories = try!(db.select_repositories());
+        repositories.iter().inspect(|repository| {
+                println!("{:?}", repository);
+            }).collect::<Vec<&Repository>>();
     } else if args.flag_version {
         println!("{}", VERSION);
     } else {
