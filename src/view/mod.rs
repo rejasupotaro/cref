@@ -67,9 +67,12 @@ impl Screen {
     }
 
     fn draw_commits(&self) {
-        for i in 0..self.commits.len() {
-            let commit = self.commits.get(i).unwrap();
-            self.rustbox.print(0, i + 1, rustbox::RB_NORMAL, Color::Green, Color::Black, &commit.message);
-        }
+        let mut count = 0;
+        self.commits.iter().filter(|commit| {
+                commit.message.contains(&self.query)
+            }).inspect(|commit| {
+                self.rustbox.print(0, count + 1, rustbox::RB_NORMAL, Color::Green, Color::Black, &commit.message);
+                count += 1;
+            }).collect::<Vec<&Commit>>();
     }
 }

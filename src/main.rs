@@ -20,8 +20,8 @@ const VERSION: &'static str = "0.0.1";
 
 docopt!(Args derive Debug, "
 Usage:
+  cref
   cref import <repo>
-  cref <word>
   cref (-help | --version)
 
 Options:
@@ -58,21 +58,17 @@ fn run(args: Args) -> SqliteResult<()> {
         let mut github = github::GitHub::new();
         let commits = github.fetch_commits(args.arg_repo);
         db.insert_commits(commits);
-    }
-
-    if !args.arg_word.is_empty() {
+    } else if args.flag_version {
+        println!("{}", VERSION);
+    } else {
         let db = try!(db::Db::new("test.db"));
-        match db.fetch_commits(args.arg_word) {
+        match db.fetch_commits() {
             Ok(commits) => {
                 let mut screen = view::Screen::new(commits);
                 screen.draw()
             },
             Err(e) => abort(format!("oops!: {:?}", e).as_ref())
         }
-    }
-
-    if args.flag_version {
-        println!("{}", VERSION);
     }
 
     Ok(())

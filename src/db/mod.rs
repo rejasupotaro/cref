@@ -45,17 +45,7 @@ impl Db {
         Ok(())
     }
 
-    fn filter_commits(&self, commits: Vec<Commit>, word: String) -> Vec<Commit> {
-        let mut result = vec!();
-        for commit in commits {
-            if commit.message.contains(&word) {
-                result.push(commit);
-            }
-        }
-        result
-    }
-
-    pub fn fetch_commits(&self, word: String) -> SqliteResult<Vec<Commit>> {
+    pub fn fetch_commits(&self) -> SqliteResult<Vec<Commit>> {
         let mut statement = try!(self.conn.prepare(select_query()));
         let mut commits = vec!();
         try!(statement.query(
@@ -66,8 +56,7 @@ impl Db {
                 });
                 Ok(())
             }));
-
-        Ok(self.filter_commits(commits, word))
+        Ok(commits)
     }
 }
 
