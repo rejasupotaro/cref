@@ -24,6 +24,7 @@ Usage:
   cref
   cref import <repo>
   cref list
+  cref delete <repo>
   cref (-help | --version)
 
 Options:
@@ -52,21 +53,25 @@ pub fn abort(why: &str) {
 fn run(args: Args) -> SqliteResult<()> {
     trace!("{:?}", args);
 
-    if args.cmd_import {
-        let repo = args.arg_repo;
+    if args.cmd_import { // cref import <repo>
+        let repository_name = args.arg_repo;
         let mut db = try!(db::Db::new("test.db"));
         let mut github = github::GitHub::new();
-        let commits = github.fetch_commits(&repo);
-        try!(db.insert_commits(&repo, commits));
-    } else if args.cmd_list {
+        let commits = github.fetch_commits(&repository_name);
+        try!(db.insert_commits(&repository_name, commits));
+    } else if args.cmd_list { // cref list
         let db = try!(db::Db::new("test.db"));
         let repositories = try!(db.select_repositories());
         repositories.iter().inspect(|repository| {
                 println!("{:?}", repository);
             }).collect::<Vec<&Repository>>();
-    } else if args.flag_version {
+    } else if args.cmd_delete { // cref delete <repo>
+        let repository_name = args.arg_repo;
+        let db = try!(db::Db::new("test.db"));
+        db.delete_repository(repository_name);
+    } else if args.flag_version { // cref -v
         println!("{}", VERSION);
-    } else {
+    } else { // cref
         let db = try!(db::Db::new("test.db"));
         let commits = try!(db.select_commits());
         let mut screen = view::Screen::new(commits);

@@ -89,6 +89,10 @@ impl Db {
             }));
         Ok(commits)
     }
+
+    pub fn delete_repository(&self, repository_name: String) {
+        println!("Not implemented yet");
+    }
 }
 
 fn create_repositories_table_query() -> &'static str {
