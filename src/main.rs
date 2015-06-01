@@ -40,10 +40,7 @@ fn main() {
 
     match run(args) {
         Ok(_) => {},
-        Err(err) => {
-            write!(&mut io::stderr(), "{}", err).unwrap();
-            ::std::process::exit(1)
-        }
+        Err(e) => abort(format!("oops!: {:?}", e).as_ref())
     }
 }
 
@@ -60,12 +57,9 @@ fn run(args: Args) -> SqliteResult<()> {
         let mut db = try!(db::Db::new("test.db"));
         let mut github = github::GitHub::new();
         let commits = github.fetch_commits(&repo);
-        match db.insert_commits(&repo, commits) {
-            Ok(()) => {},
-            Err(e) => abort(format!("oops!: {:?}", e).as_ref())
-        }
+        try!(db.insert_commits(&repo, commits));
     } else if args.cmd_list {
-        let mut db = try!(db::Db::new("test.db"));
+        let db = try!(db::Db::new("test.db"));
         let repositories = try!(db.select_repositories());
         repositories.iter().inspect(|repository| {
                 println!("{:?}", repository);
@@ -74,13 +68,9 @@ fn run(args: Args) -> SqliteResult<()> {
         println!("{}", VERSION);
     } else {
         let db = try!(db::Db::new("test.db"));
-        match db.select_commits() {
-            Ok(commits) => {
-                let mut screen = view::Screen::new(commits);
-                screen.draw()
-            },
-            Err(e) => abort(format!("oops!: {:?}", e).as_ref())
-        }
+        let commits = try!(db.select_commits());
+        let mut screen = view::Screen::new(commits);
+        screen.draw();
     }
 
     Ok(())
