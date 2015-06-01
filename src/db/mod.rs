@@ -2,18 +2,15 @@ extern crate sqlite3;
 
 use std::default::Default;
 
-use self::sqlite3::{
-    Access,
-    DatabaseConnection,
-    Query,
-    ResultRowAccess,
-    SqliteResult,
-    StatementUpdate,
-};
+use self::sqlite3::Access;
+use self::sqlite3::DatabaseConnection;
+use self::sqlite3::Query;
+use self::sqlite3::ResultRowAccess;
+use self::sqlite3::SqliteResult;
+use self::sqlite3::StatementUpdate;
 use self::sqlite3::access;
 use self::sqlite3::access::ByFilename;
 use self::sqlite3::access::flags::OpenFlags;
-
 use model::commit::Commit;
 
 pub struct Db {

@@ -11,6 +11,7 @@ extern crate sqlite3;
 mod db;
 mod github;
 mod model;
+mod view;
 
 use std::io::{self, Write};
 use sqlite3::SqliteResult;
@@ -62,7 +63,10 @@ fn run(args: Args) -> SqliteResult<()> {
     if !args.arg_word.is_empty() {
         let db = try!(db::Db::new("test.db"));
         match db.fetch_commits(args.arg_word) {
-            Ok(commits) => println!("{:?}", commits),
+            Ok(commits) => {
+                let mut screen = view::Screen::new(commits);
+                screen.draw()
+            },
             Err(e) => abort(format!("oops!: {:?}", e).as_ref())
         }
     }
