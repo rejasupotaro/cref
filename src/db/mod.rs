@@ -12,6 +12,7 @@ use self::sqlite3::access;
 use self::sqlite3::access::ByFilename;
 use self::sqlite3::access::flags::OpenFlags;
 use model::commit::Commit;
+use model::repository::Repository;
 
 pub struct Db {
     conn: DatabaseConnection,
@@ -28,31 +29,47 @@ impl Db {
         DatabaseConnection::new(access)
     }
 
-    fn create_table(&mut self) -> SqliteResult<()> {
-        try!(self.conn.exec(create_table_query()));
+    fn create_tables(&mut self) -> SqliteResult<()> {
+        try!(self.conn.exec(create_repositories_table_query()));
+        try!(self.conn.exec(create_commits_table_query()));
         Ok(())
     }
 
-    pub fn insert_commits(&mut self, commits: Vec<Commit>) -> SqliteResult<()> {
-        self.create_table();
+    pub fn insert_commits(&mut self, repository_name: &String, commits: Vec<Commit>) -> SqliteResult<()> {
+        try!(self.create_tables());
 
-        let queries = insert_queries(commits);
-        for query in queries {
+        try!(self.conn.exec(insert_repository_query(&repository_name).as_ref()));
+        let mut statement = try!(self.conn.prepare(select_repositories_query(repository_name).as_ref()));
+        let mut repositories = vec!();
+        try!(statement.query(
+            &[], &mut |row| {
+                repositories.push(Repository {
+                    id: row.get(0),
+                    name: row.get(1)
+                });
+                Ok(())
+            }));
+        let repository = repositories.get(0).unwrap();
+        println!("insert repository {}", repository.name);
+
+        for query in insert_commit_queries(repository.id, &commits) {
             let mut tx = try!(self.conn.prepare(query.as_ref()));
             let changes = try!(tx.update(&[]));
             assert_eq!(changes, 1);
         }
+        println!("insert {} commits", &commits.len());
+
         Ok(())
     }
 
-    pub fn fetch_commits(&self) -> SqliteResult<Vec<Commit>> {
-        let mut statement = try!(self.conn.prepare(select_query()));
+    pub fn select_commits(&self) -> SqliteResult<Vec<Commit>> {
+        let mut statement = try!(self.conn.prepare(select_commits_query()));
         let mut commits = vec!();
         try!(statement.query(
             &[], &mut |row| {
                 commits.push(Commit {
                     url: row.get(1),
-                    message: row.get(2),
+                    message: row.get(2)
                 });
                 Ok(())
             }));
@@ -60,22 +77,39 @@ impl Db {
     }
 }
 
-fn create_table_query() -> &'static str {
-    "CREATE TABLE IF NOT EXISTS commits (
+fn create_repositories_table_query() -> &'static str {
+    "CREATE TABLE IF NOT EXISTS repositories (
         id      INTEGER PRIMARY KEY AUTOINCREMENT,
-        url     VARCHAR NOT NULL UNIQUE,
-        message VARCHAR
+        name    VARCHAR NOT NULL UNIQUE
         )"
 }
 
-fn insert_queries(commits: Vec<Commit>) -> Vec<String> {
+fn create_commits_table_query() -> &'static str {
+    "CREATE TABLE IF NOT EXISTS commits (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        url           VARCHAR NOT NULL UNIQUE,
+        message       VARCHAR,
+        repository_id INTERGER NOT NULL
+        )"
+}
+
+fn insert_repository_query(repository_name: &String) -> String {
+    format!("INSERT OR REPLACE INTO repositories (name) VALUES ('{}')", &repository_name)
+}
+
+fn insert_commit_queries(repository_id: i32, commits: &Vec<Commit>) -> Vec<String> {
     commits.iter().map(|commit| {
-            format!("INSERT OR REPLACE INTO commits (url, message) VALUES ('{}', '{}')",
+            format!("INSERT OR REPLACE INTO commits (url, message, repository_id) VALUES ('{}', '{}', {})",
                 commit.url,
-                commit.message.replace("\n", " ").replace("'", "")) // TODO: impl exact escape later
+                commit.message.replace("\n", " ").replace("'", ""), // TODO: impl exact escape later
+                repository_id)
         }).collect::<Vec<String>>()
 }
 
-fn select_query() -> &'static str {
-    "SELECT id, url, message FROM commits"
+fn select_repositories_query(repository_name: &String) -> String {
+    format!("SELECT * FROM repositories WHERE name='{}'", repository_name)
+}
+
+fn select_commits_query() -> &'static str {
+    "SELECT * FROM commits"
 }

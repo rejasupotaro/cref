@@ -19,7 +19,7 @@ impl GitHub {
         GitHub { client: client }
     }
 
-    pub fn fetch_commits(&mut self, repo: String) -> Vec<Commit> {
+    pub fn fetch_commits(&mut self, repo: &String) -> Vec<Commit> {
         let url = format!("https://api.github.com/repos/{}/commits", repo);
         println!("fetching... {:?}", url);
 

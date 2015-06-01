@@ -54,15 +54,19 @@ fn run(args: Args) -> SqliteResult<()> {
     trace!("{:?}", args);
 
     if args.cmd_import {
+        let repo = args.arg_repo;
         let mut db = try!(db::Db::new("test.db"));
         let mut github = github::GitHub::new();
-        let commits = github.fetch_commits(args.arg_repo);
-        db.insert_commits(commits);
+        let commits = github.fetch_commits(&repo);
+        match db.insert_commits(&repo, commits) {
+            Ok(()) => {},
+            Err(e) => abort(format!("oops!: {:?}", e).as_ref())
+        }
     } else if args.flag_version {
         println!("{}", VERSION);
     } else {
         let db = try!(db::Db::new("test.db"));
-        match db.fetch_commits() {
+        match db.select_commits() {
             Ok(commits) => {
                 let mut screen = view::Screen::new(commits);
                 screen.draw()
