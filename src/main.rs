@@ -28,7 +28,7 @@ Usage:
   cref list
   cref update [<update-repo>...]
   cref delete <delete-repo>
-  cref (-help | --version)
+  cref (--help | --version)
 
 Options:
   -h, --help     Show this screen
