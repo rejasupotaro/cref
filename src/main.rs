@@ -18,7 +18,6 @@ use std::io::{self, Write};
 use std::fs;
 use std::path::PathBuf;
 use sqlite3::SqliteResult;
-use model::repository::Repository;
 
 const VERSION: &'static str = "0.0.1";
 
@@ -41,7 +40,7 @@ extern crate env_logger;
 fn main() {
     env_logger::init().unwrap();
 
-    let args: Args = Args::docopt().decode().unwrap_or_else(|e| e.exit());
+    let args = Args::docopt().decode().unwrap_or_else(|e| e.exit());
 
     match run(args) {
         Ok(_) => {},
@@ -58,35 +57,61 @@ fn run(args: Args) -> SqliteResult<()> {
     trace!("{:?}", args);
 
     create_cref_dir();
-    let mut db = try!(db::Db::new(db_file()));
 
     if args.cmd_import { // cref import <repo>
-        let repository_name = args.arg_repo;
-        let mut github = github::GitHub::new();
-        let commits = github.fetch_commits(&repository_name);
-        try!(db.insert_commits(&repository_name, commits));
+        try!(execute_import(args.arg_repo));
     } else if args.cmd_list { // cref list
-        let repositories = try!(db.select_repositories());
-        repositories.iter().inspect(|repository| {
-                println!("{:?}", repository);
-            }).collect::<Vec<&Repository>>();
+        try!(execute_list());
     } else if args.cmd_update { // cref update
-        let mut github = github::GitHub::new();
-        try!(db.select_repositories()).iter().map(|repository| {
-                let commits = github.fetch_commits(&repository.name);
-                db.insert_commits(&repository.name, commits);
-            }).collect::<Vec<_>>();
+        try!(execute_update());
     } else if args.cmd_delete { // cref delete <repo>
-        let repository_name = args.arg_repo;
-        try!(db.delete_repository(repository_name));
+        try!(execute_delete(args.arg_repo));
     } else if args.flag_version { // cref -v
         println!("{}", VERSION);
     } else { // cref
-        let commits = try!(db.select_commits());
-        let mut screen = view::Screen::new(commits);
-        screen.draw();
+        try!(execute());
     }
 
+    Ok(())
+}
+
+fn execute_import(repository_name: String) -> SqliteResult<()> {
+    let mut db = try!(db::Db::new(db_file()));
+    let mut github = github::GitHub::new();
+    let commits = github.fetch_commits(&repository_name);
+    db.insert_commits(&repository_name, commits)
+}
+
+fn execute_list() -> SqliteResult<()> {
+    let db = try!(db::Db::new(db_file()));
+    let repositories = try!(db.select_repositories());
+    repositories.iter().inspect(|repository| {
+            println!("{:?}", repository);
+        }).collect::<Vec<_>>();
+    Ok(())
+}
+
+fn execute_update() -> SqliteResult<()> {
+    let mut db = try!(db::Db::new(db_file()));
+    let mut github = github::GitHub::new();
+    try!(db.select_repositories()).iter().map(|repository| {
+            let commits = github.fetch_commits(&repository.name);
+            db.insert_commits(&repository.name, commits);
+        }).collect::<Vec<_>>();
+    Ok(())
+}
+
+fn execute_delete(repository_name: String) -> SqliteResult<()> {
+    let mut db = try!(db::Db::new(db_file()));
+    try!(db.delete_repository(repository_name));
+    Ok(())
+}
+
+fn execute() -> SqliteResult<()> {
+    let db = try!(db::Db::new(db_file()));
+    let commits = try!(db.select_commits());
+    let mut screen = view::Screen::new(commits);
+    screen.draw();
     Ok(())
 }
 
