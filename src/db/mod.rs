@@ -20,7 +20,8 @@ pub struct Db {
 
 impl Db {
     pub fn new(dbfile: &str) -> SqliteResult<Db> {
-        let conn = try!(Db::open(Default::default(), dbfile));
+        let mut conn = try!(Db::open(Default::default(), dbfile));
+        try!(conn.exec("PRAGMA foreign_keys = ON"));
         Ok(Db { conn: conn })
     }
 
@@ -90,8 +91,9 @@ impl Db {
         Ok(commits)
     }
 
-    pub fn delete_repository(&self, repository_name: String) {
-        println!("Not implemented yet");
+    pub fn delete_repository(&mut self, repository_name: String) -> SqliteResult<()> {
+        try!(self.conn.exec(delete_repository_by_name_query(repository_name).as_ref()));
+        Ok(())
     }
 }
 
@@ -107,7 +109,8 @@ fn create_commits_table_query() -> &'static str {
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
         url           VARCHAR NOT NULL UNIQUE,
         message       VARCHAR,
-        repository_id INTERGER NOT NULL
+        repository_id INTERGER NOT NULL,
+        FOREIGN KEY (repository_id) REFERENCES repositories(id) ON DELETE CASCADE
         )"
 }
 
@@ -134,4 +137,8 @@ fn select_repositories_query() -> String {
 
 fn select_commits_query() -> &'static str {
     "SELECT * FROM commits"
+}
+
+fn delete_repository_by_name_query(repository_name: String) -> String {
+    format!("DELETE FROM repositories WHERE name='{}'", repository_name)
 }

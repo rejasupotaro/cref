@@ -67,7 +67,7 @@ fn run(args: Args) -> SqliteResult<()> {
             }).collect::<Vec<&Repository>>();
     } else if args.cmd_delete { // cref delete <repo>
         let repository_name = args.arg_repo;
-        let db = try!(db::Db::new("test.db"));
+        let mut db = try!(db::Db::new("test.db"));
         db.delete_repository(repository_name);
     } else if args.flag_version { // cref -v
         println!("{}", VERSION);
