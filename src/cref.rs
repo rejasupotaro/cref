@@ -22,6 +22,7 @@ pub struct Cref {
 
 impl Cref {
     pub fn new() -> Cref {
+        create_cref_dir();
         match db::Db::new(db_file()) {
             Ok(db) => Cref { db: db},
             Err(e) => panic!(e.to_string())
@@ -30,8 +31,6 @@ impl Cref {
 
     pub fn run(&self, args: Args) -> SqliteResult<()> {
         trace!("{:?}", args);
-
-        create_cref_dir();
 
         if args.cmd_import { // cref import <repo>
             try!(self.execute_import(args.arg_import_repo));
