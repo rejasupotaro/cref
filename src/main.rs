@@ -27,6 +27,7 @@ Usage:
   cref
   cref import <repo>
   cref list
+  cref update
   cref delete <repo>
   cref (-help | --version)
 
@@ -69,9 +70,14 @@ fn run(args: Args) -> SqliteResult<()> {
         repositories.iter().inspect(|repository| {
                 println!("{:?}", repository);
             }).collect::<Vec<&Repository>>();
+    } else if args.cmd_update { // cref update
+        let mut github = github::GitHub::new();
+        try!(db.select_repositories()).iter().map(|repository| {
+                let commits = github.fetch_commits(&repository.name);
+                db.insert_commits(&repository.name, commits);
+            }).collect::<Vec<_>>();
     } else if args.cmd_delete { // cref delete <repo>
         let repository_name = args.arg_repo;
-        let mut db = try!(db::Db::new(db_file()));
         try!(db.delete_repository(repository_name));
     } else if args.flag_version { // cref -v
         println!("{}", VERSION);
