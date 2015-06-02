@@ -13,14 +13,15 @@ use self::sqlite3::access::ByFilename;
 use self::sqlite3::access::flags::OpenFlags;
 use model::commit::Commit;
 use model::repository::Repository;
+use std::path::PathBuf;
 
 pub struct Db {
     conn: DatabaseConnection,
 }
 
 impl Db {
-    pub fn new(dbfile: &str) -> SqliteResult<Db> {
-        let mut conn = try!(Db::open(Default::default(), dbfile));
+    pub fn new(db_file: PathBuf) -> SqliteResult<Db> {
+        let mut conn = try!(Db::open(Default::default(), &db_file.to_str().unwrap()));
         try!(conn.exec("PRAGMA foreign_keys = ON"));
         Ok(Db { conn: conn })
     }

@@ -13,7 +13,10 @@ mod github;
 mod model;
 mod view;
 
+use std::env;
 use std::io::{self, Write};
+use std::fs;
+use std::path::PathBuf;
 use sqlite3::SqliteResult;
 use model::repository::Repository;
 
@@ -41,11 +44,11 @@ fn main() {
 
     match run(args) {
         Ok(_) => {},
-        Err(e) => abort(format!("oops!: {:?}", e).as_ref())
+        Err(e) => abort(e.to_string())
     }
 }
 
-pub fn abort(why: &str) {
+pub fn abort(why: String) {
     write!(&mut io::stderr(), "{}", why).unwrap();
     ::std::process::exit(1)
 }
@@ -53,30 +56,42 @@ pub fn abort(why: &str) {
 fn run(args: Args) -> SqliteResult<()> {
     trace!("{:?}", args);
 
+    create_cref_dir();
+    let mut db = try!(db::Db::new(db_file()));
+
     if args.cmd_import { // cref import <repo>
         let repository_name = args.arg_repo;
-        let mut db = try!(db::Db::new("test.db"));
         let mut github = github::GitHub::new();
         let commits = github.fetch_commits(&repository_name);
         try!(db.insert_commits(&repository_name, commits));
     } else if args.cmd_list { // cref list
-        let db = try!(db::Db::new("test.db"));
         let repositories = try!(db.select_repositories());
         repositories.iter().inspect(|repository| {
                 println!("{:?}", repository);
             }).collect::<Vec<&Repository>>();
     } else if args.cmd_delete { // cref delete <repo>
         let repository_name = args.arg_repo;
-        let mut db = try!(db::Db::new("test.db"));
-        db.delete_repository(repository_name);
+        let mut db = try!(db::Db::new(db_file()));
+        try!(db.delete_repository(repository_name));
     } else if args.flag_version { // cref -v
         println!("{}", VERSION);
     } else { // cref
-        let db = try!(db::Db::new("test.db"));
         let commits = try!(db.select_commits());
         let mut screen = view::Screen::new(commits);
         screen.draw();
     }
 
     Ok(())
+}
+
+fn db_file() -> PathBuf {
+    cref_dir().join("cref.db")
+}
+
+fn cref_dir() -> PathBuf {
+    env::home_dir().map(|p| p.join(".cref")).unwrap()
+}
+
+fn create_cref_dir() {
+    fs::create_dir(cref_dir());
 }
