@@ -42,9 +42,8 @@ impl Screen {
                         },
                         Some(Key::Backspace) => {
                             self.query.pop();
-
                         },
-                        Some(Key::Esc) => {
+                        Some(Key::Esc) | Some(Key::Ctrl('c')) => {
                             break;
                         },
                         _ => {
