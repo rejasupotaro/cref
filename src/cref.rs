@@ -13,6 +13,7 @@ use super::github;
 use super::view;
 use super::Args;
 use super::abort;
+use super::errors::CrefError;
 
 const VERSION: &'static str = "0.0.1";
 

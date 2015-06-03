@@ -11,6 +11,7 @@ mod github;
 mod model;
 mod view;
 mod cref;
+mod errors;
 
 use docopt::Docopt;
 use std::io::{self, Write};
