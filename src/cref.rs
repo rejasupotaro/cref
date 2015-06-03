@@ -25,12 +25,12 @@ impl Cref {
     pub fn new() -> Cref {
         create_cref_dir();
         match db::Db::new(db_file()) {
-            Ok(db) => Cref { db: db},
+            Ok(db) => Cref { db: db },
             Err(e) => panic!(e.to_string())
         }
     }
 
-    pub fn run(&self, args: Args) -> SqliteResult<()> {
+    pub fn run(&mut self, args: Args) -> SqliteResult<()> {
         trace!("{:?}", args);
 
         if args.cmd_import { // cref import <repo>
@@ -50,12 +50,11 @@ impl Cref {
         Ok(())
     }
 
-    fn execute_import(&self, repository_names: Vec<String>) -> SqliteResult<()> {
-        let mut db = try!(db::Db::new(db_file()));
+    fn execute_import(&mut self, repository_names: Vec<String>) -> SqliteResult<()> {
         let mut github = github::GitHub::new();
         repository_names.iter().map(|repository_name| {
                 let commits = github.fetch_commits(&repository_name);
-                db.insert_commits(&repository_name, commits);
+                self.db.insert_commits(&repository_name, commits);
             }).collect::<Vec<_>>();
         Ok(())
     }
@@ -85,8 +84,7 @@ impl Cref {
 
         match repository_names.len() {
             0 => {
-                let db = try!(db::Db::new(db_file()));
-                let all_repository_names = try!(db.select_repositories()).iter().map(|repository| {
+                let all_repository_names = try!(self.db.select_repositories()).iter().map(|repository| {
                         repository.name.clone()
                     }).collect::<Vec<String>>();
                 update(all_repository_names);
@@ -98,15 +96,13 @@ impl Cref {
         Ok(())
     }
 
-    fn execute_delete(&self, repository_name: String) -> SqliteResult<()> {
-        let mut db = try!(db::Db::new(db_file()));
-        try!(db.delete_repository(repository_name));
+    fn execute_delete(&mut self, repository_name: String) -> SqliteResult<()> {
+        try!(self.db.delete_repository(repository_name));
         Ok(())
     }
 
     fn execute(&self) -> SqliteResult<()> {
-        let db = try!(db::Db::new(db_file()));
-        let commits = try!(db.select_commits());
+        let commits = try!(self.db.select_commits());
         let mut screen = view::Screen::new(commits);
         screen.draw();
         Ok(())

@@ -53,7 +53,7 @@ fn main() {
         .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
 
-    let cref = Cref::new();
+    let mut cref = Cref::new();
     match cref.run(args) {
         Ok(_) => {},
         Err(e) => abort(e.to_string())
