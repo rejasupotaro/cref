@@ -5,6 +5,7 @@ extern crate rustc_serialize;
 extern crate docopt;
 extern crate hyper;
 extern crate sqlite3;
+extern crate env_logger;
 
 mod db;
 mod github;
@@ -43,8 +44,6 @@ pub struct Args {
     cmd_list: bool,
     arg_update_repo: Vec<String>
 }
-
-extern crate env_logger;
 
 fn main() {
     env_logger::init().unwrap();

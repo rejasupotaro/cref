@@ -17,7 +17,7 @@ Search imported commits are filtered as you type.
 $ cref
 ```
 
-![]()
+![](https://raw.githubusercontent.com/rejasupotaro/cref/master/images/search.gif)
 
 ### Import
 
@@ -58,7 +58,7 @@ This tool is under development. Commands would be changed. I don't recommend to 
 
 ## Licence
 
-[MIT](https://github.com/rejasupotaro/cref/blob/master/LICENCE)
+[MIT](https://raw.githubusercontent.com/rejasupotaro/cref/master/LICENSE)
 
 ## Author
 

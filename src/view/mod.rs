@@ -48,8 +48,7 @@ impl Screen {
                         Some(Key::Esc) | Some(Key::Ctrl('c')) => {
                             break;
                         },
-                        _ => {
-                        }
+                        _ => {}
                     }
                 },
                 Err(e) => panic!("{}", e.description()),
