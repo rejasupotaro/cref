@@ -1,3 +1,5 @@
+#![feature(plugin)]
+#![plugin(docopt_macros)]
 #[macro_use]
 
 extern crate log;
@@ -18,7 +20,7 @@ use docopt::Docopt;
 use std::io::{self, Write};
 use cref::Cref;
 
-static USAGE: &'static str = "
+docopt!(Args derive Debug, "
 Usage:
   cref
   cref import <import-repo>...
@@ -30,27 +32,14 @@ Usage:
 Options:
   -h, --help     Show this screen
   -v, --version  Show version
-";
-
-#[derive(RustcDecodable, Debug)]
-pub struct Args {
-    cmd_import: bool,
-    flag_version: bool,
-    arg_import_repo: Vec<String>,
-    cmd_update: bool,
-    cmd_delete: bool,
-    arg_delete_repo: String,
-    flag_help: bool,
-    cmd_list: bool,
-    arg_update_repo: Vec<String>
-}
+");
 
 fn main() {
     env_logger::init().unwrap();
 
-    let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
-        .unwrap_or_else(|e| e.exit());
+    let args = Args::docopt()
+            .decode()
+            .unwrap_or_else(|e| e.exit());
 
     let mut cref = Cref::new();
     cref.run(args);
