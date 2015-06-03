@@ -9,7 +9,7 @@ pub struct CrefError {
 }
 
 impl CrefError {
-    pub fn from_error(&self, error: Box<Error>) -> CrefError {
+    pub fn from_error(error: Box<Error>) -> CrefError {
         CrefError { error: error }
     }
 }

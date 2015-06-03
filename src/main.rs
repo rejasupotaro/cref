@@ -54,10 +54,7 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     let mut cref = Cref::new();
-    match cref.run(args) {
-        Ok(_) => {},
-        Err(e) => abort(e.to_string())
-    }
+    cref.run(args);
 }
 
 pub fn abort(why: String) {
