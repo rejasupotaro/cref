@@ -20,7 +20,9 @@ impl GitHub {
     }
 
     pub fn fetch_commits(&mut self, repository_name: &String) -> Vec<Commit> {
-        let url = format!("https://api.github.com/repos/{}/commits", repository_name);
+        let url = format!("https://api.github.com/repos/{}/commits?per_page={}",
+            repository_name,
+            100);
         println!("fetching... {:?}", url);
 
         let res = self.client.get(&url)
