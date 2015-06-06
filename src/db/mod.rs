@@ -53,14 +53,13 @@ impl Db {
                 Ok(())
             }));
         let repository = repositories.get(0).unwrap();
-        println!("insert repository {}", repository.name);
 
         for query in query::insert_commit(repository.id, &commits) {
             let mut tx = try!(self.conn.prepare(query.as_ref()));
             let changes = try!(tx.update(&[]));
             assert_eq!(changes, 1);
         }
-        println!("insert {} commits", &commits.len());
+        println!("[{}] inserted {} commits", repository.name, &commits.len());
 
         Ok(())
     }

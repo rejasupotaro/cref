@@ -7,8 +7,12 @@ extern crate sqlite3;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
-use super::db;
-use super::github;
+use std::thread;
+use std::sync::mpsc;
+use std::sync::Arc;
+use std::cell::RefCell;
+use super::db::Db;
+use super::github::GitHub;
 use super::view;
 use super::Args;
 use super::abort;
@@ -16,14 +20,14 @@ use super::abort;
 const VERSION: &'static str = "0.0.1";
 
 pub struct Cref {
-    db: db::Db
+    db: Arc<RefCell<Db>>
 }
 
 impl Cref {
     pub fn new() -> Cref {
         create_cref_dir();
-        match db::Db::new(db_file()) {
-            Ok(db) => Cref { db: db },
+        match Db::new(db_file()) {
+            Ok(db) => Cref { db: Arc::new(RefCell::new(db)) },
             Err(e) => panic!(e.to_string())
         }
     }
@@ -46,16 +50,26 @@ impl Cref {
         }
     }
 
-    fn execute_import(&mut self, repository_names: Vec<String>) {
-        let mut github = github::GitHub::new();
-        repository_names.iter().map(|repository_name| {
-                let commits = github.fetch_commits(&repository_name);
-                self.db.insert_commits(&repository_name, commits);
-            }).collect::<Vec<_>>();
+    fn execute_import(&self, repository_names: Vec<String>) {
+        let (tx, rx) = mpsc::channel();
+        for i in 0..repository_names.len() {
+            let name = repository_names.get(i).unwrap().to_string();
+            let tx = tx.clone();
+            thread::spawn(move || {
+                let mut github = GitHub::new();
+                let commits = github.fetch_commits(&name);
+                tx.send((name.to_string(), commits));
+            });
+        }
+
+        for _ in 0..repository_names.len() {
+            let (name, commits) = rx.recv().unwrap();
+            self.db.borrow_mut().insert_commits(&name, commits);
+        }
     }
 
     fn execute_list(&self) {
-        match self.db.select_repositories() {
+        match self.db.borrow_mut().select_repositories() {
             Ok(repositories) => {
                 repositories.iter().map(|repository| {
                         println!("{:?}", repository);
@@ -67,9 +81,9 @@ impl Cref {
 
     fn execute_update(&self, repository_names: Vec<String>) {
         let update = |repository_names: Vec<String>| {
-            match db::Db::new(db_file()) {
+            match Db::new(db_file()) {
                 Ok(mut db) => {
-                    let mut github = github::GitHub::new();
+                    let mut github = GitHub::new();
 
                     repository_names.iter().map(|repository_name| {
                             let commits = github.fetch_commits(&repository_name);
@@ -82,7 +96,7 @@ impl Cref {
 
         match repository_names.len() {
             0 => {
-                match self.db.select_repositories() {
+                match self.db.borrow_mut().select_repositories() {
                     Ok(repositories) => {
                         let all_repository_names = repositories.iter().map(|repository| {
                                 repository.name.clone()
@@ -99,14 +113,14 @@ impl Cref {
     }
 
     fn execute_delete(&mut self, repository_name: String) {
-        match self.db.delete_repository(repository_name) {
+        match self.db.borrow_mut().delete_repository(repository_name) {
             Ok(()) => {},
             Err(e) => abort(e.to_string())
         }
     }
 
     fn execute(&self) {
-        match self.db.select_commits() {
+        match self.db.borrow_mut().select_commits() {
             Ok(commits) => {
                 let mut screen = view::Screen::new(commits);
                 screen.draw();
