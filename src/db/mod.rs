@@ -24,6 +24,8 @@ impl Db {
     pub fn new(db_file: PathBuf) -> SqliteResult<Db> {
         let mut conn = try!(Db::open(Default::default(), &db_file.to_str().unwrap()));
         try!(conn.exec(query::enable_foreign_key()));
+        try!(conn.exec(query::create_repositories_table()));
+        try!(conn.exec(query::create_commits_table()));
         Ok(Db { conn: conn })
     }
 
@@ -32,15 +34,7 @@ impl Db {
         DatabaseConnection::new(access)
     }
 
-    fn create_tables(&mut self) -> SqliteResult<()> {
-        try!(self.conn.exec(query::create_repositories_table()));
-        try!(self.conn.exec(query::create_commits_table()));
-        Ok(())
-    }
-
     pub fn insert_commits(&mut self, repository_name: &String, commits: Vec<Commit>) -> SqliteResult<()> {
-        try!(self.create_tables());
-
         try!(self.conn.exec(query::insert_repository(&repository_name).as_ref()));
         let mut statement = try!(self.conn.prepare(query::select_repositories_by_name(repository_name).as_ref()));
         let mut repositories = vec!();

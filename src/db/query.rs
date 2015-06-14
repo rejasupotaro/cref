@@ -27,11 +27,11 @@ pub fn insert_repository(repository_name: &String) -> String {
 
 pub fn insert_commit(repository_id: i32, commits: &Vec<Commit>) -> Vec<String> {
     commits.iter().map(|commit| {
-            format!("INSERT OR REPLACE INTO commits (url, message, repository_id) VALUES ('{}', '{}', {})",
-                commit.url,
-                commit.message.replace("\n", " ").replace("'", ""), // TODO: impl exact escape later
-                repository_id)
-        }).collect::<Vec<String>>()
+        format!("INSERT OR REPLACE INTO commits (url, message, repository_id) VALUES ('{}', '{}', {})",
+            commit.url,
+            commit.message.replace("\n", " ").replace("'", ""), // TODO: impl exact escape later
+            repository_id)
+    }).collect::<Vec<String>>()
 }
 
 pub fn select_repositories_by_name(repository_name: &String) -> String {

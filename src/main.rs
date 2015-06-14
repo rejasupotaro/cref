@@ -12,9 +12,9 @@ extern crate env_logger;
 mod db;
 mod github;
 mod model;
-mod view;
 mod cref;
 mod errors;
+mod screen;
 
 use docopt::Docopt;
 use std::io::{self, Write};

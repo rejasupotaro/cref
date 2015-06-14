@@ -11,11 +11,12 @@ use std::thread;
 use std::sync::mpsc;
 use std::sync::Arc;
 use std::cell::RefCell;
+use screen::Screen;
 use super::db::Db;
 use super::github::GitHub;
-use super::view;
 use super::Args;
 use super::abort;
+use super::model::commit::Commit;
 
 const VERSION: &'static str = "0.0.1";
 
@@ -71,43 +72,29 @@ impl Cref {
     fn execute_list(&self) {
         match self.db.borrow_mut().select_repositories() {
             Ok(repositories) => {
-                repositories.iter().map(|repository| {
-                        println!("{:?}", repository);
-                    }).collect::<Vec<_>>();
+                for repository in repositories.iter() {
+                    println!("{:?}", repository);
+                }
             },
             Err(e) => abort(e.to_string())
         }
     }
 
     fn execute_update(&self, repository_names: Vec<String>) {
-        let update = |repository_names: Vec<String>| {
-            match Db::new(db_file()) {
-                Ok(mut db) => {
-                    let mut github = GitHub::new();
-
-                    repository_names.iter().map(|repository_name| {
-                            let commits = github.fetch_commits(&repository_name);
-                            db.insert_commits(&repository_name, commits);
-                        }).collect::<Vec<_>>();
-                },
-                Err(e) => abort(e.to_string())
-            }
-        };
-
         match repository_names.len() {
             0 => {
-                match self.db.borrow_mut().select_repositories() {
+                match self.db.borrow().select_repositories() {
                     Ok(repositories) => {
                         let all_repository_names = repositories.iter().map(|repository| {
                                 repository.name.clone()
-                            }).collect::<Vec<String>>();
-                        update(all_repository_names);
+                        }).collect::<Vec<String>>();
+                        self.execute_import(all_repository_names);
                     },
                     Err(e) => abort(e.to_string())
                 }
             },
             _ => {
-                update(repository_names);
+                self.execute_import(repository_names);
             }
         }
     }
@@ -122,7 +109,7 @@ impl Cref {
     fn execute(&self) {
         match self.db.borrow_mut().select_commits() {
             Ok(commits) => {
-                let mut screen = view::Screen::new(commits);
+                let mut screen = Screen::new(commits);
                 screen.draw();
             },
             Err(e) => abort(e.to_string())

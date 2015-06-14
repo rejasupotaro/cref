@@ -1,11 +1,11 @@
 extern crate rustbox;
 extern crate regex;
 
-use model::commit::Commit;
 use std::error::Error;
 use std::default::Default;
 use self::regex::Regex;
 use self::rustbox::{Color, RustBox, Key};
+use model::commit::Commit;
 
 pub struct Screen {
     rustbox: RustBox,
@@ -69,11 +69,11 @@ impl Screen {
     fn draw_commits(&self) {
         let mut count = 0;
         self.commits.iter().filter(|commit| {
-                let regex = Regex::new(format!(r"(?i){}(?-i)", &self.query).as_ref()).unwrap();
-                regex.is_match(&commit.message)
-            }).inspect(|commit| {
-                self.rustbox.print(0, count + 1, rustbox::RB_NORMAL, Color::Default, Color::Default, &commit.message);
-                count += 1;
-            }).collect::<Vec<&Commit>>();
+            let regex = Regex::new(format!(r"(?i){}(?-i)", &self.query).as_ref()).unwrap();
+            regex.is_match(&commit.message)
+        }).inspect(|commit| {
+            self.rustbox.print(0, count + 1, rustbox::RB_NORMAL, Color::Default, Color::Default, &commit.message);
+            count += 1;
+        }).collect::<Vec<_>>();
     }
 }
